@@ -7,7 +7,7 @@ from note_mvc import Service
 #        "description": string,
 #        "subheadings": list[string, string],
 #    }
-
+# https://github.com/google/fleetspeak/blob/master/fleetspeak/src/server/comms.go#L137-L142
 
 # Show this, hide that etc
 # forwards info to view
@@ -16,12 +16,17 @@ from note_mvc import Service
 class Controller:
 
     def __init__(self, model):
-        self.model = model
-        self.service = Service(model)
-        self.menu_items = self.model.items()
+        if model == 'notes':
+            self.model = NotesModel()
+        else:
+            self.model = TagsModel()
+        self.service = Service()
 
     def basic_output(self):
-        return self.model.sort_items()
+        items = list(self.model)
+        sorted_items = self.service.sort(items)
+        # items = self.model.tui_objectify(items) # <-- plan interface
+        return sorted_items
 
     def query_output(self, query):
         query_result = self.model.query(self.menu_items, query)
@@ -31,44 +36,21 @@ class Controller:
         query_result = self.model.sub_query(self.menu_items, subquery)
         return self.model.sort_items()
 
-""" Prototype View Interface
-def list_notes(query):
-    notes_model = NotesModel()
-    control = Controller(notes_model)
-    if query:
-        return display_list(control.query_output(query))
-    else:
-        return display_list(note_control.basic_output())
-def list_tags(query):
-    tags_model = TagsModel()
-    control = Controller(notes_model)
-    if query:
-        return display_list(control.query_output(query))
-    else:
-        return display_list(control.basic_output())
-def list_search(query):
-    notes_model = NotesModel()
-    control = Controller(notes_model)
-    if query:
-        return display_list(control.model_query(query))
-    else:
-        raise NotImplementedError
-"""
+ctrl = Controller('notes')
+print(ctrl.basic_output())
 
 
-notes_model = NotesModel()
-# view = View()
+# Features to Solve:
 
-note_control = Controller(notes_model) #, view)
-
-
-for x in note_control.basic_output():
-    print(x)
-    print('\n')
-
-
-
-# tags_model = TagsModel()
-# tag_control = Controller(tags_model)
-
+# list_notes - query
+#   - output notes
+#   - output notes after query on tag
+#
+# list_tags - query
+#   - output tags
+#   - output tags after query
+#
+# list search - query
+#   - no query error
+#   - output results query starts with on titles
 

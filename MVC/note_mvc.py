@@ -2,7 +2,7 @@ import pickle
 
 
 def fuzzy_match(title, iterable):
-    print("Yup, not found! Try:")
+    print("Yup, not found! Try one of these:")
     print(iterable)
 
 
@@ -37,13 +37,16 @@ class Model:
 # sorted order, and there is no interface to choose the
 # sort order.
 
-def tui_object(x, y, z):
-    return zip(x, y, z)
-
-
 class NotesModel(Model):
-    notes = load_meta()
     model_type = 'notes'
+    notes = load_meta()
+
+    def __iter__(self):
+        for item in self.notes:
+            yield item
+
+    def __len__(self):
+        return len(self.notes)
 
     def get(self, title):
         try:
@@ -51,42 +54,42 @@ class NotesModel(Model):
         except KeyError as e:
             fuzzy_match(title, self.notes.keys())
 
-    def get_info(self, iterable):
-        return [self.notes[item]['description']
+    def get_value(self, item, info):
+        return self.notes[item].get(info, None)
+
+    def get_values(self, iterable, info):
+        return [self.get_attribute(item, info)
                 for item in iterable]
 
-    def get_subinfo(self, iterable):
-        return [self.notes[item]['sub_headings']
-                if 'sub_headings' in self.notes[item] else None
-                for item in iterable]
+    def get_structure(self, iterable, structure):
 
-    def items(self):
-        return self.notes.keys()
+        return [{item:
 
-    def get_views(self, title):
-        return self.get(title)['views']
-
-
+# Should this (Service) communicate with the model??
+#   - should the model build [title, subtitle, drop_down] for TUI
+#   - would defining a column interface be easier and passing all the data make
+#     things less complicated? e.g. I want title, subtitle drop_down=views
+#   - Alternatively I pass only the things I need for sorting to Service
+#
+# What I am actually doing??
+#  - I want x, y, z after sorting after querying.
 class Service:
 
     SORT_RULE = 5
     TOP_n_VIEWED = 3
 
-    def __init__(self, model):
-        self.model = model
-        self.model_length = len(model)
+    def __init__(self):
+        pass
 
-    def sort(self):
-        if self.model_length > SORT_RULE:
-            return clever_sort()
-        return alphabetize()
+    def sort(self, items):
+        if len(items) > self.SORT_RULE:
+            return self.alphabetize(items)
+        return self.alphabetize(items)
 
-    def alphabetize(self):
-        iterable = self.notes
+    @staticmethod
+    def alphabetize(iterable):
         sort = sorted(iterable, key=lambda x: x[0].lower())
-        return tui_object(sort, self.get_info(sort), self.get_subinfo(sort))
-
-
+        return sort
 
 
 if __name__ == '__main__':
