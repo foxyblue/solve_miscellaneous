@@ -1,4 +1,4 @@
-# from note_mvc import TagsModel
+from note_mvc import TagsModel
 from note_mvc import NotesModel
 from note_mvc import Service
 
@@ -13,31 +13,60 @@ from note_mvc import Service
 # forwards info to view
 # handles dictation of models
 
-class Controller:
+# alias to display_list
+def view_list(_list):
+    for item in _list:
+        title = item['title']
+        descr = item['description']
+        sub_titles = item['sub_heading']
+        print("Title: {}, Description: {}".format(title, descr))
+        if sub_titles:
+            for s in sub_titles:
+                s_1, s_2 = s[:2]
+                print("\t- {}: {}".format(s_1, s_2))
 
-    def __init__(self, model):
-        if model == 'notes':
-            self.model = NotesModel()
-        else:
-            self.model = TagsModel()
-        self.service = Service()
+
+class Controller:
+    """ The controller should be agnostic to the interface that display the
+        data.
+    """
+
+    def __init__(self, model_type):
+        self.model = NotesModel()
+        if model_type == 'tags':
+            self.model = TagsModel(self.model)
+        self.service = Service(self.model)
 
     def basic_output(self):
         items = list(self.model)
-        sorted_items = self.service.sort(items)
-        # items = self.model.tui_objectify(items) # <-- plan interface
-        return sorted_items
+        self.__apply_service(items)
 
-    def query_output(self, query):
-        query_result = self.model.query(self.menu_items, query)
-        return self.model.sort_items()
+    def query_output(self, query=None):
+        items = self.model.query_tags(query)
+        self.__apply_service(items)
 
-    def sub_query_output(self, subquery):
-        query_result = self.model.sub_query(self.menu_items, subquery)
-        return self.model.sort_items()
+    def search_output(self, query):
+        if not query:
+            print("\n\tNo Query Error\n")
+            exit()
+        items = self.model.query_titles(query)
+        self.__apply_service(items)
 
+    def __apply_service(self, items):
+        ordered_items = self.service.order(items)
+        structure = self.service.structure(ordered_items)
+        return view_list(structure)
+
+
+# Actor logic:
 ctrl = Controller('notes')
-print(ctrl.basic_output())
+# ctrl = Controller('tags')
+# ctrl.basic_output()
+ctrl.query_output('tagle')
+
+# ctrl = Controller('tags')
+# ctrl.basic_output()
+# print(ctrl.query_output(query))
 
 
 # Features to Solve:
